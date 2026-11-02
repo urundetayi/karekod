@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Karekod Bilgisi</title>
+<style>
+  :root{--bg:#f4f6f9;--card:#fff;--ink:#1d2433;--muted:#6b7385;--accent:#1f4e78;--line:#dde2ea}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+       min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:32px 16px}
+  .card{background:var(--card);width:100%;max-width:520px;border-radius:14px;padding:28px 24px;
+        box-shadow:0 2px 14px rgba(20,30,50,.08);border-top:5px solid var(--accent)}
+  h1{font-size:18px;margin:0 0 18px;color:var(--accent)}
+  #metin{font-size:20px;line-height:1.6;white-space:pre-wrap;word-break:break-word;margin:0}
+  label{display:block;font-size:14px;color:var(--muted);margin-bottom:6px}
+  textarea{width:100%;min-height:130px;font:inherit;font-size:16px;padding:10px;border:1px solid var(--line);border-radius:8px}
+  button{margin-top:12px;background:var(--accent);color:#fff;border:0;border-radius:8px;padding:10px 18px;font-size:15px;cursor:pointer}
+  #sonuc{margin-top:22px;text-align:center}
+  #sonuc img{width:240px;height:240px;border:1px solid var(--line);border-radius:6px}
+  .not{font-size:13px;color:var(--muted);margin-top:10px;line-height:1.5}
+  #link{font-size:12px;color:var(--muted);word-break:break-all;margin-top:8px}
+</style>
+</head>
+<body>
+<main class="card">
+  <section id="goster" hidden>
+    <h1>Bilgi</h1>
+    <p id="metin"></p>
+  </section>
+
+  <section id="uret" hidden>
+    <h1>Karekod oluştur</h1>
+    <label for="girdi">Karekod okutulunca görünecek metin</label>
+    <textarea id="girdi" placeholder="Ürün: Örnek A&#10;Seri No: SN-0001&#10;Tarih: 02.11.2026"></textarea>
+    <button id="olustur">Karekodu oluştur</button>
+    <div id="sonuc" hidden>
+      <img id="qr" alt="Karekod">
+      <p class="not">Karekoda sağ tıklayıp <b>Resmi farklı kaydet</b> deyin, sonra Excel'de <b>Ekle → Resimler</b> ile ekleyin.</p>
+      <p id="link"></p>
+    </div>
+  </section>
+</main>
+<script>
+  var h = location.hash.slice(1);
+  if (h) {
+    var t;
+    try { t = decodeURIComponent(h.replace(/\+/g, " ")); } catch (e) { t = h; }
+    document.getElementById("metin").textContent = t;
+    document.getElementById("goster").hidden = false;
+    document.title = "Bilgi";
+  } else {
+    document.getElementById("uret").hidden = false;
+    document.getElementById("olustur").onclick = function () {
+      var v = document.getElementById("girdi").value.trim();
+      if (!v) return;
+      var url = location.origin + location.pathname + "#" + encodeURIComponent(v);
+      document.getElementById("qr").src =
+        "https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=" + encodeURIComponent(url);
+      document.getElementById("link").textContent = url;
+      document.getElementById("sonuc").hidden = false;
+    };
+  }
+  window.addEventListener("hashchange", function () { location.reload(); });
+</script>
+</body>
+</html>
