@@ -3,65 +3,447 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Karekod Bilgisi</title>
+<title>Karekod</title>
 <style>
-  :root{--bg:#f4f6f9;--card:#fff;--ink:#1d2433;--muted:#6b7385;--accent:#1f4e78;--line:#dde2ea}
+  :root{--bg:#f4f6f9;--card:#fff;--ink:#1d2433;--muted:#6b7385;--accent:#1f4e78;--line:#dde2ea;--ok:#1e7b45;--err:#b42318;--soft:#eef3f8}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
-       min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:32px 16px}
-  .card{background:var(--card);width:100%;max-width:520px;border-radius:14px;padding:28px 24px;
+       min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:28px 16px}
+  .card{background:var(--card);width:100%;max-width:560px;border-radius:14px;padding:26px 22px;
         box-shadow:0 2px 14px rgba(20,30,50,.08);border-top:5px solid var(--accent)}
-  h1{font-size:18px;margin:0 0 18px;color:var(--accent)}
-  #metin{font-size:20px;line-height:1.6;white-space:pre-wrap;word-break:break-word;margin:0}
+  h1{font-size:19px;margin:0 0 18px;color:var(--accent)}
+  .muted{color:var(--muted);font-size:14px}
+  .ok{color:var(--ok)} .err{color:var(--err)}
+
+  /* Gösterme ekranı */
+  #gGorselLink{display:block;margin:0 0 18px}
+  #gGorsel{display:block;width:100%;height:auto;border-radius:8px;border:1px solid var(--line)}
+  #gMetin{font-size:19px;line-height:1.6;white-space:pre-wrap;word-break:break-word;margin:0}
+
+  /* Oluşturma ekranı */
+  details{background:var(--soft);border-radius:10px;padding:12px 14px;margin-bottom:20px}
+  summary{cursor:pointer;font-weight:600;font-size:15px}
+  details .alan{margin-top:12px}
   label{display:block;font-size:14px;color:var(--muted);margin-bottom:6px}
-  textarea{width:100%;min-height:130px;font:inherit;font-size:16px;padding:10px;border:1px solid var(--line);border-radius:8px}
-  button{margin-top:12px;background:var(--accent);color:#fff;border:0;border-radius:8px;padding:10px 18px;font-size:15px;cursor:pointer}
-  #sonuc{margin-top:22px;text-align:center}
-  #sonuc img{width:240px;height:240px;border:1px solid var(--line);border-radius:6px}
-  .not{font-size:13px;color:var(--muted);margin-top:10px;line-height:1.5}
-  #link{font-size:12px;color:var(--muted);word-break:break-all;margin-top:8px}
+  input[type=text],input[type=password],textarea{width:100%;font:inherit;font-size:15px;padding:9px 10px;
+        border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+  textarea{min-height:150px;resize:vertical}
+  .satir{display:flex;gap:10px}
+  .satir>div{flex:1;min-width:0}
+  .secim{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px;padding:0;border:0}
+  .secim legend{font-size:14px;color:var(--muted);margin-bottom:8px;padding:0}
+  .secim label{display:flex;align-items:center;gap:6px;margin:0;padding:8px 12px;border:1px solid var(--line);
+        border-radius:8px;cursor:pointer;color:var(--ink);font-size:15px}
+  .secim input{margin:0}
+  .secim label:has(input:checked){border-color:var(--accent);background:var(--soft)}
+  .blok{margin-bottom:16px}
+  #onizleme{display:block;max-width:100%;max-height:220px;margin-top:10px;border-radius:8px;border:1px solid var(--line)}
+  button{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:10px 18px;font-size:15px;cursor:pointer}
+  button.ikincil{background:#fff;color:var(--accent);border:1px solid var(--accent)}
+  button:disabled{opacity:.55;cursor:default}
+  .dugmeler{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  #islemMesaj{margin:12px 0 0;font-size:14px}
+  #sonuc{margin-top:22px;padding-top:20px;border-top:1px solid var(--line);text-align:center}
+  #qrCanvas{width:260px;height:260px;image-rendering:pixelated;border:1px solid var(--line);border-radius:6px}
+  #sonucLink{font-size:12px;color:var(--muted);word-break:break-all;margin-top:10px}
+  .uyari{font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:18px}
 </style>
 </head>
 <body>
 <main class="card">
+
+  <!-- Karekod okutulunca açılan ekran -->
   <section id="goster" hidden>
-    <h1>Bilgi</h1>
-    <p id="metin"></p>
+    <p id="gYukleniyor" class="muted">Yükleniyor…</p>
+    <a id="gGorselLink" target="_blank" rel="noopener" hidden><img id="gGorsel" alt="Görsel"></a>
+    <p id="gMetin" hidden></p>
+    <p id="gHata" class="err" hidden></p>
   </section>
 
+  <!-- Karekod oluşturma ekranı -->
   <section id="uret" hidden>
     <h1>Karekod oluştur</h1>
-    <label for="girdi">Karekod okutulunca görünecek metin</label>
-    <textarea id="girdi" placeholder="Ürün: Örnek A&#10;Seri No: SN-0001&#10;Tarih: 02.11.2026"></textarea>
-    <button id="olustur">Karekodu oluştur</button>
-    <div id="sonuc" hidden>
-      <img id="qr" alt="Karekod">
-      <p class="not">Karekoda sağ tıklayıp <b>Resmi farklı kaydet</b> deyin, sonra Excel'de <b>Ekle → Resimler</b> ile ekleyin.</p>
-      <p id="link"></p>
+
+    <details id="ayarlar">
+      <summary>GitHub bağlantısı <span id="baglantiDurum" class="muted"></span></summary>
+      <div class="alan">
+        <label for="token">Erişim anahtarı (token)</label>
+        <input type="password" id="token" autocomplete="off" placeholder="github_pat_...">
+      </div>
+      <div class="alan satir">
+        <div><label for="kullanici">Kullanıcı adı</label><input type="text" id="kullanici"></div>
+        <div><label for="depo">Depo adı</label><input type="text" id="depo"></div>
+        <div style="flex:.6"><label for="dal">Dal</label><input type="text" id="dal" value="main"></div>
+      </div>
+      <div class="dugmeler">
+        <button id="ayarKaydet">Kaydet ve test et</button>
+      </div>
+      <p id="ayarMesaj" class="muted" style="margin:10px 0 0"></p>
+    </details>
+
+    <fieldset class="secim">
+      <legend>Karekodda ne olsun?</legend>
+      <label><input type="radio" name="tur" value="metin" checked> Sadece metin</label>
+      <label><input type="radio" name="tur" value="gorsel"> Sadece görsel</label>
+      <label><input type="radio" name="tur" value="ikisi"> Metin + görsel</label>
+    </fieldset>
+
+    <div class="blok" id="metinBlok">
+      <label for="metinAlan">Görünecek metin (uzunluk sınırı yok)</label>
+      <textarea id="metinAlan" placeholder="Ürün: Örnek A&#10;Seri No: SN-0001&#10;Tarih: 02.11.2026"></textarea>
     </div>
+
+    <div class="blok" id="gorselBlok" hidden>
+      <label for="gorselAlan">Görsel (JPG veya PNG)</label>
+      <input type="file" id="gorselAlan" accept="image/*">
+      <img id="onizleme" alt="Önizleme" hidden>
+    </div>
+
+    <button id="olustur">Karekodu oluştur</button>
+    <p id="islemMesaj"></p>
+
+    <div id="sonuc" hidden>
+      <canvas id="qrCanvas" width="560" height="560"></canvas>
+      <div class="dugmeler" style="justify-content:center">
+        <button id="indir">PNG olarak indir</button>
+        <button id="kopyala" class="ikincil">Panoya kopyala</button>
+      </div>
+      <p id="kopyaMesaj" class="muted" style="margin:8px 0 0"></p>
+      <p id="sonucLink"></p>
+    </div>
+
+    <p class="uyari">Kayıtlar GitHub deponuzda herkese açık olarak saklanır. Karekodu okutan herkes içeriği görebilir;
+      gizli bilgi koymayın. Erişim anahtarı yalnızca bu tarayıcıda saklanır, depoya yüklenmez.</p>
   </section>
+
 </main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
-  var h = location.hash.slice(1);
-  if (h) {
-    var t;
-    try { t = decodeURIComponent(h.replace(/\+/g, " ")); } catch (e) { t = h; }
-    document.getElementById("metin").textContent = t;
-    document.getElementById("goster").hidden = false;
-    document.title = "Bilgi";
-  } else {
-    document.getElementById("uret").hidden = false;
-    document.getElementById("olustur").onclick = function () {
-      var v = document.getElementById("girdi").value.trim();
-      if (!v) return;
-      var url = location.origin + location.pathname + "#" + encodeURIComponent(v);
-      document.getElementById("qr").src =
-        "https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=" + encodeURIComponent(url);
-      document.getElementById("link").textContent = url;
-      document.getElementById("sonuc").hidden = false;
+(function () {
+  "use strict";
+
+  // Özel alan adı kullanıyorsanız burayı doldurun; github.io adresinde otomatik bulunur.
+  var SABIT = { kullanici: "", depo: "", dal: "main" };
+
+  var KAYIT_KLASORU = "kayitlar";
+  var AYAR_ANAHTARI = "karekodAyarlari";
+  var $ = function (id) { return document.getElementById(id); };
+
+  function adrestenBul() {
+    var m = location.hostname.match(/^([^.]+)\.github\.io$/i);
+    var parcalar = location.pathname.split("/").filter(Boolean);
+    if (!m) return { kullanici: "", depo: "", dal: "main" };
+    var ilk = parcalar[0] || "";
+    var depo = ilk && ilk.indexOf(".") === -1 ? ilk : m[1] + ".github.io";
+    return { kullanici: m[1], depo: depo, dal: "main" };
+  }
+
+  function depoBilgisi() {
+    var a = adrestenBul();
+    return {
+      kullanici: SABIT.kullanici || a.kullanici,
+      depo: SABIT.depo || a.depo,
+      dal: SABIT.dal || a.dal || "main"
     };
   }
-  window.addEventListener("hashchange", function () { location.reload(); });
+
+  function rawAdres(b, yol) {
+    return "https://raw.githubusercontent.com/" + encodeURIComponent(b.kullanici) + "/" +
+      encodeURIComponent(b.depo) + "/" + encodeURIComponent(b.dal) + "/" + yol;
+  }
+
+  // ---------- Gösterme ----------
+  function goster(id) {
+    $("goster").hidden = false;
+    var b = depoBilgisi();
+    function hata(m) { $("gYukleniyor").hidden = true; $("gHata").textContent = m; $("gHata").hidden = false; }
+    if (!/^[a-z0-9]{6,32}$/.test(id)) return hata("Geçersiz karekod.");
+    if (!b.kullanici || !b.depo) return hata("Sayfa ayarı eksik (kullanıcı/depo bulunamadı).");
+
+    fetch(rawAdres(b, KAYIT_KLASORU + "/" + id + ".json") + "?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) {
+        if (r.status === 404) throw new Error("Kayıt bulunamadı. Yeni oluşturulduysa birkaç saniye sonra sayfayı yenileyin.");
+        if (!r.ok) throw new Error("Kayıt okunamadı (" + r.status + ").");
+        return r.json();
+      })
+      .then(function (k) {
+        $("gYukleniyor").hidden = true;
+        if (k.gorsel) {
+          var src = rawAdres(b, k.gorsel);
+          $("gGorsel").src = src;
+          $("gGorselLink").href = src;
+          $("gGorselLink").hidden = false;
+        }
+        if (k.metin) {
+          $("gMetin").textContent = k.metin;
+          $("gMetin").hidden = false;
+        }
+        if (!k.gorsel && !k.metin) hata("Bu kayıt boş.");
+      })
+      .catch(function (e) { hata(e.message || "Bağlantı hatası."); });
+  }
+
+  // Eski karekodlar (#metin biçimi) çalışmaya devam eder
+  function eskiGoster(h) {
+    $("goster").hidden = false;
+    $("gYukleniyor").hidden = true;
+    var t;
+    try { t = decodeURIComponent(h.replace(/\+/g, " ")); } catch (e) { t = h; }
+    $("gMetin").textContent = t;
+    $("gMetin").hidden = false;
+  }
+
+  // ---------- Ayarlar ----------
+  function ayarOku() {
+    try { return JSON.parse(localStorage.getItem(AYAR_ANAHTARI)) || {}; } catch (e) { return {}; }
+  }
+  function ayarYaz(a) {
+    try { localStorage.setItem(AYAR_ANAHTARI, JSON.stringify(a)); return true; } catch (e) { return false; }
+  }
+  function ayarlar() {
+    return {
+      token: $("token").value.trim(),
+      kullanici: $("kullanici").value.trim(),
+      depo: $("depo").value.trim(),
+      dal: $("dal").value.trim() || "main"
+    };
+  }
+
+  function hataMetni(durum, ghMesaj) {
+    if (durum === 401) return "Erişim anahtarı geçersiz veya süresi dolmuş.";
+    if (durum === 403) return "Erişim anahtarının bu depoya yazma izni yok (Contents: Read and write gerekli).";
+    if (durum === 404) return "Depo bulunamadı. Kullanıcı/depo adını ve anahtarın bu depoya erişimini kontrol edin.";
+    if (durum === 409 || durum === 422) return "GitHub kaydı kabul etmedi: " + (ghMesaj || durum);
+    return "GitHub hatası (" + durum + ")" + (ghMesaj ? ": " + ghMesaj : "");
+  }
+
+  function gh(yol, secenek) {
+    var a = ayarlar();
+    secenek = secenek || {};
+    secenek.headers = {
+      "Authorization": "Bearer " + a.token,
+      "Accept": "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28"
+    };
+    return fetch("https://api.github.com/repos/" + encodeURIComponent(a.kullanici) + "/" +
+      encodeURIComponent(a.depo) + yol, secenek).then(function (r) {
+      if (r.ok) return r.json();
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        throw new Error(hataMetni(r.status, j.message));
+      });
+    });
+  }
+
+  function dosyaYukle(yol, b64, mesaj) {
+    return gh("/contents/" + yol, {
+      method: "PUT",
+      body: JSON.stringify({ message: mesaj, content: b64, branch: ayarlar().dal })
+    });
+  }
+
+  function durumGuncelle(tamam) {
+    $("baglantiDurum").textContent = tamam ? "· bağlı" : "· ayarlanmadı";
+    $("baglantiDurum").className = tamam ? "ok" : "muted";
+  }
+
+  function baglantiTest() {
+    var a = ayarlar();
+    if (!a.token || !a.kullanici || !a.depo) {
+      $("ayarMesaj").textContent = "Anahtar, kullanıcı adı ve depo adı gerekli.";
+      $("ayarMesaj").className = "err";
+      return Promise.resolve(false);
+    }
+    $("ayarMesaj").textContent = "Test ediliyor…";
+    $("ayarMesaj").className = "muted";
+    return gh("").then(function () {
+      $("ayarMesaj").textContent = "Bağlantı tamam.";
+      $("ayarMesaj").className = "ok";
+      durumGuncelle(true);
+      return true;
+    }).catch(function (e) {
+      $("ayarMesaj").textContent = e.message;
+      $("ayarMesaj").className = "err";
+      durumGuncelle(false);
+      return false;
+    });
+  }
+
+  // ---------- Yardımcılar ----------
+  function yeniId() {
+    var harf = "abcdefghijkmnpqrstuvwxyz23456789", s = "", r = new Uint8Array(10);
+    crypto.getRandomValues(r);
+    for (var i = 0; i < r.length; i++) s += harf[r[i] % harf.length];
+    return s;
+  }
+
+  function metinB64(s) {
+    var b = new TextEncoder().encode(s), bin = "";
+    for (var i = 0; i < b.length; i += 0x8000) bin += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000));
+    return btoa(bin);
+  }
+
+  function gorselHazirla(dosya) {
+    return new Promise(function (coz, reddet) {
+      var url = URL.createObjectURL(dosya), img = new Image();
+      img.onload = function () {
+        var en = img.naturalWidth, boy = img.naturalHeight, max = 1600;
+        var o = Math.min(1, max / Math.max(en, boy));
+        en = Math.round(en * o); boy = Math.round(boy * o);
+        var c = document.createElement("canvas");
+        c.width = en; c.height = boy;
+        var x = c.getContext("2d");
+        x.fillStyle = "#fff"; x.fillRect(0, 0, en, boy);
+        x.drawImage(img, 0, 0, en, boy);
+        URL.revokeObjectURL(url);
+        coz(c.toDataURL("image/jpeg", 0.85).split(",")[1]);
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(url);
+        reddet(new Error("Bu görsel açılamadı. JPG veya PNG bir dosya deneyin."));
+      };
+      img.src = url;
+    });
+  }
+
+  function qrCiz(metin) {
+    var gecici = document.createElement("div");
+    new QRCode(gecici, { text: metin, width: 480, height: 480, correctLevel: QRCode.CorrectLevel.M });
+    var kaynak = gecici.querySelector("canvas");
+    var c = $("qrCanvas"), bosluk = 40;
+    c.width = kaynak.width + bosluk * 2;
+    c.height = kaynak.height + bosluk * 2;
+    var x = c.getContext("2d");
+    x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height);
+    x.imageSmoothingEnabled = false;
+    x.drawImage(kaynak, bosluk, bosluk);
+  }
+
+  function secilenTur() {
+    return document.querySelector('input[name="tur"]:checked').value;
+  }
+
+  function turGuncelle() {
+    var t = secilenTur();
+    $("metinBlok").hidden = t === "gorsel";
+    $("gorselBlok").hidden = t === "metin";
+  }
+
+  // ---------- Oluşturma ----------
+  var sonId = "";
+
+  function mesaj(m, sinif) { $("islemMesaj").textContent = m; $("islemMesaj").className = sinif || "muted"; }
+
+  function olustur() {
+    var t = secilenTur();
+    var metin = t === "gorsel" ? "" : $("metinAlan").value.trim();
+    var dosya = t === "metin" ? null : $("gorselAlan").files[0];
+    var a = ayarlar();
+
+    if (!a.token || !a.kullanici || !a.depo) {
+      $("ayarlar").open = true;
+      return mesaj("Önce GitHub bağlantısını ayarlayın.", "err");
+    }
+    if (t !== "gorsel" && !metin) return mesaj("Metin alanı boş.", "err");
+    if (t !== "metin" && !dosya) return mesaj("Bir görsel seçin.", "err");
+    if (typeof QRCode === "undefined") return mesaj("Karekod kütüphanesi yüklenemedi. İnternet bağlantınızı kontrol edip sayfayı yenileyin.", "err");
+
+    var id = yeniId();
+    var kayit = { metin: metin || null, gorsel: null, olusturma: new Date().toISOString() };
+    $("olustur").disabled = true;
+    $("sonuc").hidden = true;
+    mesaj("Hazırlanıyor…");
+
+    var adim = Promise.resolve();
+    if (dosya) {
+      adim = adim.then(function () {
+        mesaj("Görsel hazırlanıyor…");
+        return gorselHazirla(dosya);
+      }).then(function (b64) {
+        mesaj("Görsel yükleniyor…");
+        var yol = KAYIT_KLASORU + "/" + id + ".jpg";
+        return dosyaYukle(yol, b64, "Görsel eklendi: " + id).then(function () { kayit.gorsel = yol; });
+      });
+    }
+    adim.then(function () {
+      mesaj("Kayıt kaydediliyor…");
+      return dosyaYukle(KAYIT_KLASORU + "/" + id + ".json", metinB64(JSON.stringify(kayit, null, 2)), "Kayıt eklendi: " + id);
+    }).then(function () {
+      var link = location.origin + location.pathname + "?id=" + id;
+      qrCiz(link);
+      sonId = id;
+      $("sonucLink").textContent = link;
+      $("kopyaMesaj").textContent = "";
+      $("sonuc").hidden = false;
+      mesaj("Karekod hazır. Telefonla okutabilirsiniz.", "ok");
+    }).catch(function (e) {
+      mesaj(e.message || "Bir hata oluştu.", "err");
+    }).then(function () {
+      $("olustur").disabled = false;
+    });
+  }
+
+  function indir() {
+    $("qrCanvas").toBlob(function (blob) {
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "karekod-" + sonId + ".png";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+    }, "image/png");
+  }
+
+  function kopyala() {
+    if (!navigator.clipboard || typeof ClipboardItem === "undefined") {
+      $("kopyaMesaj").textContent = "Bu tarayıcı kopyalamayı desteklemiyor; PNG olarak indirin.";
+      return;
+    }
+    $("qrCanvas").toBlob(function (blob) {
+      navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]).then(function () {
+        $("kopyaMesaj").textContent = "Kopyalandı. Excel'de hücreye tıklayıp Ctrl+V yapın.";
+      }).catch(function () {
+        $("kopyaMesaj").textContent = "Kopyalanamadı; PNG olarak indirin.";
+      });
+    }, "image/png");
+  }
+
+  function uret() {
+    $("uret").hidden = false;
+    var kayitli = ayarOku(), b = depoBilgisi();
+    $("token").value = kayitli.token || "";
+    $("kullanici").value = kayitli.kullanici || b.kullanici;
+    $("depo").value = kayitli.depo || b.depo;
+    $("dal").value = kayitli.dal || b.dal;
+    var hazir = !!(kayitli.token && $("kullanici").value && $("depo").value);
+    durumGuncelle(hazir);
+    if (!hazir) $("ayarlar").open = true;
+
+    $("ayarKaydet").onclick = function () {
+      var a = ayarlar();
+      if (!ayarYaz(a)) $("ayarMesaj").textContent = "Uyarı: Tarayıcı ayarları saklamıyor; sayfayı her açtığınızda yeniden girmeniz gerekecek.";
+      baglantiTest().then(function (ok) { if (ok) $("ayarlar").open = false; });
+    };
+    Array.prototype.forEach.call(document.querySelectorAll('input[name="tur"]'), function (r) {
+      r.addEventListener("change", turGuncelle);
+    });
+    $("gorselAlan").addEventListener("change", function () {
+      var f = this.files[0];
+      if (!f) { $("onizleme").hidden = true; return; }
+      $("onizleme").src = URL.createObjectURL(f);
+      $("onizleme").hidden = false;
+    });
+    $("olustur").onclick = olustur;
+    $("indir").onclick = indir;
+    $("kopyala").onclick = kopyala;
+    turGuncelle();
+  }
+
+  // ---------- Başlat ----------
+  var id = new URLSearchParams(location.search).get("id");
+  if (id) goster(id.toLowerCase());
+  else if (location.hash.length > 1) eskiGoster(location.hash.slice(1));
+  else uret();
+})();
 </script>
 </body>
 </html>
